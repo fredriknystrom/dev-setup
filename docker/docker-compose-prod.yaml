@@ -1,0 +1,36 @@
+services:
+
+  # Creates a database, user and root user for you. The data is saved between sessions
+  db:
+    image: mysql:8.0
+    container_name: mysql-production
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    restart: always
+    environment:
+      # These varaibles should be defined in the .env file
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+
+  # Creates our own image based on the Dockerfile. Puts the container in a inf loop so it doesnt shutdown before connecting bash terminal
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: django-production
+    command: /bin/bash -c "while true; do sleep 1000; done"
+    volumes:
+      - .:/app/myproject  # Mount the current directory to /app inside the container
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=myproject.settings.prod_settings # Using production settings
+    depends_on:
+      - db # The database image defined above
+
+volumes:
+  mysql_data:

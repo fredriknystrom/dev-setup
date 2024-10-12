@@ -1,0 +1,40 @@
+# Use an official Python runtime as a parent image
+FROM python:3.11.3-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Echo message to indicate development build
+RUN echo "Development build"
+
+# Install system dependencies, needed for mysqlclient and opencv
+RUN apt-get update && apt-get install -y \
+    gcc \
+    default-libmysqlclient-dev \
+    pkg-config \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set work directory for installing requirements to venv
+WORKDIR /app
+
+ENV VIRTUAL_ENV=/app/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Install dependencies:
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+ 
+# Change work dir to acid folder where manage.py is located
+WORKDIR /app/acid
+
+EXPOSE 8000
+
+# Need to create some certificates to run with https
+CMD ["python manage.py runserver_plus --cert-file dev.crt --key-file dev.key 0.0.0.0:8000"]
+
+ 
